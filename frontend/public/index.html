@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skill Builder v2 — by Rafael</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #07070f;
+    --surface: #0f0f1a;
+    --card: #13131f;
+    --border: #1c1c2e;
+    --border2: #252538;
+    --green: #00ff88;
+    --orange: #ff6b35;
+    --cyan: #06b6d4;
+    --purple: #a855f7;
+    --red: #ef4444;
+    --yellow: #fbbf24;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --muted2: #94a3b8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.02) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 280px 1fr 380px;
+    grid-template-rows: 60px 1fr;
+    height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    grid-column: 1 / -1;
+    background: rgba(13,13,26,0.95);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+    backdrop-filter: blur(10px);
+  }
+
+  .topbar .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 1px;
+  }
+  .topbar .logo span { color: var(--muted); }
+
+  .ai-mode-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    font-weight: 700;
+  }
+  .ai-mode-badge.anthropic { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.3); }
+  .ai-mode-badge.n8n { background: rgba(6,182,212,0.1); color: var(--cyan); border: 1px solid rgba(6,182,212,0.3); }
+  .ai-mode-badge.none { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+
+  .topbar .step-pills {
+    display: flex;
+    gap: 6px;
+    margin-left: 24px;
+  }
+
+  .step-pill {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .step-pill.active { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.07); }
+  .step-pill.done { border-color: rgba(0,255,136,0.3); color: rgba(0,255,136,0.5); }
+  .step-pill .pill-num {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    background: var(--border2);
+  }
+  .step-pill.active .pill-num { background: var(--green); color: var(--bg); }
+  .step-pill.done .pill-num { background: rgba(0,255,136,0.3); color: var(--bg); }
+
+  .topbar .actions { margin-left: auto; display: flex; gap: 8px; }
+
+  .btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 7px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--muted2);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .btn:hover { border-color: var(--border2); color: var(--text); background: var(--card); }
+  .btn.primary { background: var(--green); color: var(--bg); border-color: var(--green); font-weight: 700; }
+  .btn.primary:hover { background: #00dd77; }
+  .btn.primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn.danger { color: var(--red); border-color: rgba(239,68,68,0.3); }
+  .btn.danger:hover { background: rgba(239,68,68,0.1); }
+
+  /* LEFT SIDEBAR */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-section { padding: 20px; border-bottom: 1px solid var(--border); }
+  .sidebar-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .score-display { display: flex; flex-direction: column; gap: 10px; }
+  .score-item { display: flex; flex-direction: column; gap: 4px; }
+  .score-item .score-label { display: flex; justify-content: space-between; font-family: 'Space Mono', monospace; font-size: 10px; }
+  .score-item .score-name { color: var(--muted2); }
+  .score-item .score-val { color: var(--text); font-weight: 700; }
+  .score-bar { height: 4px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+  .score-item:nth-child(1) .score-fill { background: var(--green); }
+  .score-item:nth-child(2) .score-fill { background: var(--cyan); }
+  .score-item:nth-child(3) .score-fill { background: var(--purple); }
+  .score-item:nth-child(4) .score-fill { background: var(--orange); }
+
+  .total-score {
+    margin-top: 8px;
+    padding: 14px;
+    background: var(--card);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    text-align: center;
+  }
+  .total-score .total-num { font-size: 36px; font-weight: 800; line-height: 1; transition: color 0.3s; }
+  .total-score .total-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+  .checklist { display: flex; flex-direction: column; gap: 8px; }
+  .check-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-family: 'Space Mono', monospace; font-size: 11px;
+    color: var(--muted); line-height: 1.4; transition: color 0.2s;
+  }
+  .check-item.done { color: var(--green); }
+  .check-item.warn { color: var(--yellow); }
+  .check-icon {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 1px solid var(--border2); display: flex;
+    align-items: center; justify-content: center;
+    font-size: 9px; flex-shrink: 0; margin-top: 1px;
+  }
+  .check-item.done .check-icon { background: rgba(0,255,136,0.15); border-color: var(--green); color: var(--green); }
+
+  .template-list { display: flex; flex-direction: column; gap: 8px; }
+  .template-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; background: var(--card);
+    border: 1px solid var(--border2); border-radius: 8px;
+    cursor: pointer; transition: all 0.2s; text-align: left; width: 100%;
+  }
+  .template-btn:hover { border-color: var(--green); background: rgba(0,255,136,0.03); }
+  .template-btn .t-icon { font-size: 18px; }
+  .template-btn .t-info { flex: 1; }
+  .template-btn .t-name { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .template-btn .t-desc { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); }
+
+  /* MAIN AREA */
+  .main { overflow-y: auto; display: flex; flex-direction: column; }
+
+  .step-panel { display: none; flex-direction: column; height: 100%; }
+  .step-panel.active { display: flex; }
+
+  .panel-header { padding: 24px 32px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .panel-header .panel-step { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--green); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+  .panel-header h2 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+  .panel-header p { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  .panel-body { flex: 1; padding: 24px 32px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+
+  .form-group { display: flex; flex-direction: column; gap: 8px; }
+  .form-label { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted2); display: flex; align-items: center; gap: 8px; }
+  .form-label .required { color: var(--orange); font-size: 9px; }
+  .form-label .hint { color: var(--muted); font-size: 10px; font-style: italic; }
+
+  .form-input, .form-textarea, .form-select {
+    background: var(--card); border: 1px solid var(--border2); border-radius: 10px;
+    padding: 12px 16px; color: var(--text); font-family: 'Space Mono', monospace;
+    font-size: 12px; outline: none; transition: border-color 0.2s; width: 100%;
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--green); }
+  .form-textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+  .form-select option { background: var(--card); }
+
+  .tag-input-wrap {
+    background: var(--card); border: 1px solid var(--border2); border-radius: 10px;
+    padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 6px;
+    min-height: 46px; align-items: center; cursor: text; transition: border-color 0.2s;
+  }
+  .tag-input-wrap:focus-within { border-color: var(--green); }
+  .tag {
+    background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.2);
+    color: var(--green); padding: 3px 10px; border-radius: 100px;
+    font-family: 'Space Mono', monospace; font-size: 11px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tag .tag-remove { cursor: pointer; opacity: 0.6; font-size: 10px; line-height: 1; }
+  .tag .tag-remove:hover { opacity: 1; }
+  .tag-input {
+    background: none; border: none; outline: none; color: var(--text);
+    font-family: 'Space Mono', monospace; font-size: 12px; min-width: 120px; flex: 1;
+  }
+
+  .steps-builder { display: flex; flex-direction: column; gap: 10px; }
+  .step-item {
+    background: var(--card); border: 1px solid var(--border2); border-radius: 10px;
+    padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start;
+  }
+  .step-num-badge {
+    width: 24px; height: 24px; border-radius: 50%; background: var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted);
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .step-item-content { flex: 1; }
+  .step-item-input {
+    background: none; border: none; outline: none; color: var(--text);
+    font-family: 'Space Mono', monospace; font-size: 12px; width: 100%; line-height: 1.5;
+  }
+  .step-item-remove {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 14px; padding: 2px; transition: color 0.2s;
+  }
+  .step-item-remove:hover { color: var(--red); }
+
+  .add-step-btn {
+    display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+    background: none; border: 1px dashed var(--border2); border-radius: 10px;
+    color: var(--muted); cursor: pointer; font-family: 'Space Mono', monospace;
+    font-size: 11px; transition: all 0.2s; width: 100%;
+  }
+  .add-step-btn:hover { border-color: var(--green); color: var(--green); }
+
+  .ai-assist-btn {
+    display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+    background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.3);
+    border-radius: 8px; color: var(--purple); cursor: pointer;
+    font-family: 'Space Mono', monospace; font-size: 11px; transition: all 0.2s;
+  }
+  .ai-assist-btn:hover { background: rgba(168,85,247,0.15); }
+  .ai-assist-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .ai-assist-btn .spinner {
+    width: 12px; height: 12px; border: 2px solid rgba(168,85,247,0.3);
+    border-top-color: var(--purple); border-radius: 50%;
+    animation: spin 0.8s linear infinite; display: none;
+  }
+  .ai-assist-btn.loading .spinner { display: block; }
+  .ai-assist-btn.loading .btn-icon { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .ai-response {
+    background: rgba(168,85,247,0.05); border: 1px solid rgba(168,85,247,0.2);
+    border-radius: 10px; padding: 16px; font-family: 'Space Mono', monospace;
+    font-size: 12px; line-height: 1.7; color: var(--muted2); display: none;
+  }
+  .ai-response.visible { display: block; }
+  .ai-response .ai-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+    color: var(--purple); font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  }
+
+  /* RIGHT PANEL */
+  .preview-panel {
+    background: var(--surface); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .preview-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  }
+  .preview-header .ph-dots { display: flex; gap: 5px; }
+  .ph-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .ph-dot:nth-child(1) { background: #ff5f56; }
+  .ph-dot:nth-child(2) { background: #ffbd2e; }
+  .ph-dot:nth-child(3) { background: #27c93f; }
+  .preview-header .ph-title { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); margin-left: 4px; }
+  .preview-header .copy-btn {
+    margin-left: auto; font-family: 'Space Mono', monospace; font-size: 10px;
+    padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border2);
+    background: none; color: var(--muted); cursor: pointer; transition: all 0.2s;
+  }
+  .copy-btn:hover { color: var(--green); border-color: var(--green); }
+
+  .preview-content { flex: 1; overflow-y: auto; padding: 20px; }
+  .preview-code {
+    font-family: 'Space Mono', monospace; font-size: 11px; line-height: 1.8;
+    color: #94a3b8; white-space: pre-wrap; word-break: break-word;
+  }
+
+  .p-yaml { color: #f6c90e; }
+  .p-key { color: var(--green); }
+  .p-val { color: #7dd3fc; }
+  .p-h1 { color: var(--orange); font-weight: 700; }
+  .p-h2 { color: #7dd3fc; font-weight: 700; }
+  .p-h3 { color: var(--purple); }
+  .p-bullet { color: var(--purple); }
+  .p-code { color: #fbbf24; }
+  .p-comment { color: #374151; }
+  .p-bold { color: var(--text); font-weight: 700; }
+
+  .quality-alert {
+    margin: 0 20px 16px; padding: 12px 16px; border-radius: 8px;
+    font-family: 'Space Mono', monospace; font-size: 11px;
+    display: none; align-items: center; gap: 10px; flex-shrink: 0;
+  }
+  .quality-alert.visible { display: flex; }
+  .quality-alert.good { background: rgba(0,255,136,0.07); border: 1px solid rgba(0,255,136,0.2); color: var(--green); }
+  .quality-alert.warn { background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.2); color: var(--yellow); }
+  .quality-alert.bad { background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.2); color: var(--red); }
+
+  .panel-footer {
+    padding: 16px 32px; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+  }
+  .nav-hint { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--card); border: 1px solid var(--border2); border-radius: 10px;
+    padding: 12px 20px; font-family: 'Space Mono', monospace; font-size: 12px;
+    color: var(--text); z-index: 100; transition: transform 0.3s ease;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 1024px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: 60px auto; height: auto; }
+    .sidebar, .preview-panel { display: none; }
+    .main { min-height: calc(100vh - 60px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo">SKILL<span>builder</span></div>
+    <div class="ai-mode-badge none" id="ai-mode-badge">CARGANDO...</div>
+
+    <div class="step-pills">
+      <div class="step-pill active" onclick="goToStep(1)" id="pill-1">
+        <div class="pill-num">1</div> Identidad
+      </div>
+      <div class="step-pill" onclick="goToStep(2)" id="pill-2">
+        <div class="pill-num">2</div> Trigger
+      </div>
+      <div class="step-pill" onclick="goToStep(3)" id="pill-3">
+        <div class="pill-num">3</div> Pasos
+      </div>
+      <div class="step-pill" onclick="goToStep(4)" id="pill-4">
+        <div class="pill-num">4</div> Reglas
+      </div>
+      <div class="step-pill" onclick="goToStep(5)" id="pill-5">
+        <div class="pill-num">5</div> Pulir
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn danger" onclick="resetAll()">&#8634; Reset</button>
+      <button class="btn primary" onclick="downloadSkill()" id="download-btn" disabled>&#11015; Descargar SKILL.md</button>
+    </div>
+  </div>
+
+  <!-- LEFT SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Calidad de la skill</div>
+      <div class="score-display">
+        <div class="score-item">
+          <div class="score-label"><span class="score-name">Trigger</span><span class="score-val" id="score-trigger">0%</span></div>
+          <div class="score-bar"><div class="score-fill" id="bar-trigger" style="width:0%"></div></div>
+        </div>
+        <div class="score-item">
+          <div class="score-label"><span class="score-name">Claridad</span><span class="score-val" id="score-clarity">0%</span></div>
+          <div class="score-bar"><div class="score-fill" id="bar-clarity" style="width:0%"></div></div>
+        </div>
+        <div class="score-item">
+          <div class="score-label"><span class="score-name">Completitud</span><span class="score-val" id="score-complete">0%</span></div>
+          <div class="score-bar"><div class="score-fill" id="bar-complete" style="width:0%"></div></div>
+        </div>
+        <div class="score-item">
+          <div class="score-label"><span class="score-name">Estructura</span><span class="score-val" id="score-structure">0%</span></div>
+          <div class="score-bar"><div class="score-fill" id="bar-structure" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="total-score" style="margin-top: 14px;">
+        <div class="total-num" id="total-score-num" style="color: var(--red)">0</div>
+        <div class="total-label">SKILL POWER SCORE</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Checklist</div>
+      <div class="checklist" id="checklist">
+        <div class="check-item" id="chk-name"><div class="check-icon">&#9675;</div>Nombre definido</div>
+        <div class="check-item" id="chk-desc"><div class="check-icon">&#9675;</div>Descripcion con keywords</div>
+        <div class="check-item" id="chk-trigger"><div class="check-icon">&#9675;</div>Frases de activacion (+3)</div>
+        <div class="check-item" id="chk-steps"><div class="check-icon">&#9675;</div>Pasos definidos (+2)</div>
+        <div class="check-item" id="chk-rules"><div class="check-icon">&#9675;</div>Reglas/errores a evitar</div>
+        <div class="check-item" id="chk-pushy"><div class="check-icon">&#9675;</div>Descripcion es "empujona"</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Templates de Rafael</div>
+      <div class="template-list">
+        <button class="template-btn" onclick="loadTemplate('deploy')">
+          <span class="t-icon">&#128640;</span>
+          <div class="t-info"><div class="t-name">Deploy Hostinger</div><div class="t-desc">Node.js en produccion</div></div>
+        </button>
+        <button class="template-btn" onclick="loadTemplate('crud')">
+          <span class="t-icon">&#9889;</span>
+          <div class="t-info"><div class="t-name">Generar CRUD</div><div class="t-desc">Ruta + controller + UI</div></div>
+        </button>
+        <button class="template-btn" onclick="loadTemplate('auth')">
+          <span class="t-icon">&#128274;</span>
+          <div class="t-info"><div class="t-name">Auth JWT</div><div class="t-desc">Login + tokens</div></div>
+        </button>
+        <button class="template-btn" onclick="loadTemplate('stack')">
+          <span class="t-icon">&#128736;</span>
+          <div class="t-info"><div class="t-name">Stack Rafael</div><div class="t-desc">Convenciones globales</div></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+
+    <!-- STEP 1: IDENTIDAD -->
+    <div class="step-panel active" id="step-1">
+      <div class="panel-header">
+        <div class="panel-step">Paso 1 de 5</div>
+        <h2>Que hace esta skill?</h2>
+        <p>Define la identidad y proposito. Esto va en el frontmatter YAML.</p>
+      </div>
+      <div class="panel-body">
+        <div class="form-group">
+          <label class="form-label">Nombre de la skill <span class="required">REQUERIDO</span><span class="hint">-- usa-guiones-asi</span></label>
+          <input class="form-input" id="skill-name" placeholder="ej: hostinger-nodejs-deploy" oninput="onNameInput(this.value)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Para que sirve? <span class="required">REQUERIDO</span></label>
+          <textarea class="form-textarea" id="skill-purpose" placeholder="Describe en 1-2 oraciones que hace esta skill y que problema resuelve..." oninput="updatePreview()" style="min-height: 70px;"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoria</label>
+          <select class="form-select" id="skill-category" onchange="updatePreview()">
+            <option value="">Selecciona...</option>
+            <option value="deploy">Deploy / Produccion</option>
+            <option value="backend">Backend / API</option>
+            <option value="frontend">Frontend / UI</option>
+            <option value="database">Base de datos</option>
+            <option value="auth">Autenticacion</option>
+            <option value="payments">Pagos</option>
+            <option value="workflow">Flujo de trabajo</option>
+            <option value="other">Otro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <label class="form-label" style="margin-bottom: 0;">Contexto adicional para la IA</label>
+            <button class="ai-assist-btn" onclick="aiAction('context')" id="btn-ai-context">
+              <span class="btn-icon">&#10022;</span><div class="spinner"></div>Mejorar con IA
+            </button>
+          </div>
+          <textarea class="form-textarea" id="skill-context" placeholder="Hay algo mas que la AI deba saber? Stack especifico, restricciones, ejemplos concretos..." oninput="updatePreview()" style="min-height: 70px;"></textarea>
+        </div>
+        <div class="ai-response" id="ai-context-response"></div>
+      </div>
+      <div class="panel-footer">
+        <span class="nav-hint">Completa nombre y proposito para continuar</span>
+        <button class="btn primary" onclick="goToStep(2)">Siguiente &rarr;</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: TRIGGER -->
+    <div class="step-panel" id="step-2">
+      <div class="panel-header">
+        <div class="panel-step">Paso 2 de 5</div>
+        <h2>Cuando se activa?</h2>
+        <p>El trigger es lo mas critico. La AI lee la descripcion y decide si usar la skill.</p>
+      </div>
+      <div class="panel-body">
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <label class="form-label" style="margin-bottom: 0;">Frases que el usuario dice para activarla <span class="required">MUY IMPORTANTE</span></label>
+            <button class="ai-assist-btn" onclick="aiAction('triggers')" id="btn-ai-triggers">
+              <span class="btn-icon">&#10022;</span><div class="spinner"></div>Sugerir con IA
+            </button>
+          </div>
+          <div class="tag-input-wrap" id="trigger-wrap" onclick="document.getElementById('trigger-input').focus()">
+            <div id="trigger-tags"></div>
+            <input class="tag-input" id="trigger-input" placeholder="Escribe y presiona Enter..." onkeydown="addTag(event, 'triggers')">
+          </div>
+          <div style="font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 4px;">
+            Ej: "deploy", "subir a produccion", "Hostinger", "PM2", "publicar app"
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descripcion de activacion <span class="required">REQUERIDO</span></label>
+          <textarea class="form-textarea" id="skill-description" placeholder="Escribe la descripcion completa. Debe ser 'empujona' -- incluir todos los casos de uso, palabras clave, y decir SIEMPRE que se active ante X." oninput="updatePreview(); updateScores()" style="min-height: 120px;"></textarea>
+          <div id="desc-feedback" style="font-family: 'Space Mono', monospace; font-size: 10px; margin-top: 6px;"></div>
+        </div>
+        <div class="form-group">
+          <button class="ai-assist-btn" onclick="aiAction('description')" id="btn-ai-desc" style="width: 100%; justify-content: center;">
+            <span class="btn-icon">&#10022; </span><div class="spinner"></div>Generar descripcion potente con IA
+          </button>
+        </div>
+        <div class="ai-response" id="ai-desc-response"></div>
+      </div>
+      <div class="panel-footer">
+        <button class="btn" onclick="goToStep(1)">&larr; Atras</button>
+        <button class="btn primary" onclick="goToStep(3)">Siguiente &rarr;</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: PASOS -->
+    <div class="step-panel" id="step-3">
+      <div class="panel-header">
+        <div class="panel-step">Paso 3 de 5</div>
+        <h2>Como se ejecuta?</h2>
+        <p>Los pasos exactos que la AI debe seguir. Comandos reales, secuencias concretas.</p>
+      </div>
+      <div class="panel-body">
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <label class="form-label" style="margin-bottom: 0;">Pasos del procedimiento <span class="required">REQUERIDO</span></label>
+            <button class="ai-assist-btn" onclick="aiAction('steps')" id="btn-ai-steps">
+              <span class="btn-icon">&#10022;</span><div class="spinner"></div>Generar pasos con IA
+            </button>
+          </div>
+          <div class="steps-builder" id="steps-container"></div>
+          <button class="add-step-btn" onclick="addStep()">+ Agregar paso</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Comandos o codigo de ejemplo</label>
+          <textarea class="form-textarea" id="skill-code" placeholder="# Comandos exactos que la AI debe ejecutar&#10;npm run build&#10;ssh usuario@servidor&#10;pm2 restart app" oninput="updatePreview()" style="min-height: 90px; font-size: 11px;"></textarea>
+        </div>
+        <div class="ai-response" id="ai-steps-response"></div>
+      </div>
+      <div class="panel-footer">
+        <button class="btn" onclick="goToStep(2)">&larr; Atras</button>
+        <button class="btn primary" onclick="goToStep(4)">Siguiente &rarr;</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: REGLAS -->
+    <div class="step-panel" id="step-4">
+      <div class="panel-header">
+        <div class="panel-step">Paso 4 de 5</div>
+        <h2>Reglas y errores a evitar</h2>
+        <p>Lo que aprendiste haciendo esto manualmente. Los errores mas comunes, lo que NUNCA hay que hacer.</p>
+      </div>
+      <div class="panel-body">
+        <div class="form-group">
+          <label class="form-label">Errores comunes a evitar</label>
+          <div class="tag-input-wrap" id="errors-wrap" onclick="document.getElementById('errors-input').focus()">
+            <div id="errors-tags"></div>
+            <input class="tag-input" id="errors-input" placeholder="Escribe un error y presiona Enter..." onkeydown="addTag(event, 'errors')">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reglas obligatorias (SIEMPRE hacer)</label>
+          <textarea class="form-textarea" id="skill-rules-always" placeholder="- Siempre verificar que el build fue exitoso antes del deploy&#10;- Siempre hacer backup antes de modificar la DB" oninput="updatePreview()"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prohibiciones (NUNCA hacer)</label>
+          <textarea class="form-textarea" id="skill-rules-never" placeholder="- Nunca hacer deploy sin haber testeado localmente&#10;- Nunca borrar la carpeta node_modules en produccion" oninput="updatePreview()"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Variables de entorno necesarias</label>
+          <div class="tag-input-wrap" id="envvars-wrap" onclick="document.getElementById('envvars-input').focus()">
+            <div id="envvars-tags"></div>
+            <input class="tag-input" id="envvars-input" placeholder="DATABASE_URL, JWT_SECRET..." onkeydown="addTag(event, 'envvars')">
+          </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end;">
+          <button class="ai-assist-btn" onclick="aiAction('rules')" id="btn-ai-rules">
+            <span class="btn-icon">&#10022;</span><div class="spinner"></div>Sugerir reglas con IA
+          </button>
+        </div>
+        <div class="ai-response" id="ai-rules-response"></div>
+      </div>
+      <div class="panel-footer">
+        <button class="btn" onclick="goToStep(3)">&larr; Atras</button>
+        <button class="btn primary" onclick="goToStep(5)">Siguiente &rarr;</button>
+      </div>
+    </div>
+
+    <!-- STEP 5: PULIR -->
+    <div class="step-panel" id="step-5">
+      <div class="panel-header">
+        <div class="panel-step">Paso 5 de 5</div>
+        <h2>Pulir y exportar</h2>
+        <p>Revision final. La IA analiza tu skill completa y te da retroalimentacion antes de descargar.</p>
+      </div>
+      <div class="panel-body">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <button class="ai-assist-btn" onclick="aiAction('review')" id="btn-ai-review" style="width:100%; justify-content:center; padding: 14px;">
+            <span class="btn-icon">&#10022; </span><div class="spinner"></div>Analisis completo con IA -- que puede mejorar?
+          </button>
+          <div class="ai-response" id="ai-review-response"></div>
+          <div class="form-group">
+            <label class="form-label">Notas adicionales / Contexto extra</label>
+            <textarea class="form-textarea" id="skill-notes" placeholder="Cualquier informacion adicional: versiones especificas, links de documentacion, casos edge..." oninput="updatePreview()"></textarea>
+          </div>
+          <div style="background: var(--card); border: 1px solid var(--border2); border-radius: 12px; padding: 20px;">
+            <div style="font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px;">
+              Donde guardar el archivo
+            </div>
+            <div style="font-family: 'Space Mono', monospace; font-size: 12px; color: var(--cyan); line-height: 2;">
+              C:\Users\rfuen\Desktop\claude_code\skills\<br>
+              &nbsp;&nbsp;&nbsp;<span id="folder-name" style="color: var(--green)">nombre-skill</span>/<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--orange)">SKILL.md</span> -- aqui va el archivo
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-footer">
+        <button class="btn" onclick="goToStep(4)">&larr; Atras</button>
+        <button class="btn primary" onclick="downloadSkill()" style="font-size: 13px; padding: 10px 24px;">&#11015; Descargar SKILL.md</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT PANEL: PREVIEW -->
+  <div class="preview-panel">
+    <div class="preview-header">
+      <div class="ph-dots"><div class="ph-dot"></div><div class="ph-dot"></div><div class="ph-dot"></div></div>
+      <span class="ph-title" id="preview-filename">SKILL.md</span>
+      <button class="copy-btn" onclick="copyPreview()">Copiar</button>
+    </div>
+    <div class="quality-alert" id="quality-alert"></div>
+    <div class="preview-content">
+      <div class="preview-code" id="preview-code">
+        <span style="color: var(--muted)">// El preview aparecera aqui mientras completas el formulario...</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"><span id="toast-icon"></span><span id="toast-msg">Copiado!</span></div>
+
+<script>
+// =============================================
+// STATE
+// =============================================
+const state = {
+  triggers: [],
+  errors: [],
+  envvars: [],
+  steps: []
+};
+
+let currentStep = 1;
+
+// =============================================
+// TEMPLATES
+// =============================================
+const templates = {
+  deploy: {
+    name: 'hostinger-nodejs-deploy',
+    purpose: 'Deploy completo de aplicaciones Node.js en Hostinger Cloud Startup. Cubre build, transferencia de archivos via SSH, configuracion de PM2 y verificacion del servidor.',
+    category: 'deploy',
+    triggers: ['deploy', 'subir a produccion', 'Hostinger', 'PM2', 'publicar', 'produccion', 'servidor'],
+    description: 'Guia completa para deploy de apps Node.js en Hostinger Cloud Startup. Usar SIEMPRE que el usuario mencione: deploy, publicar, subir a produccion, Hostinger, SSH, PM2, nginx, dominio, SSL, variables de entorno en produccion, o cuando quiera que su app este online. Tambien activar si hay errores en produccion o si el usuario pregunta como actualizar su servidor.',
+    steps: [
+      'Verificar que el codigo funciona localmente (npm run dev)',
+      'Hacer build del frontend: npm run build',
+      'Verificar que /dist fue generado correctamente',
+      'Conectar via SSH: ssh usuario@ip-servidor',
+      'Navegar al directorio del proyecto: cd /home/public_html/proyecto',
+      'Hacer git pull para actualizar el codigo',
+      'Instalar dependencias: npm install --production',
+      'Reiniciar PM2: pm2 restart nombre-app',
+      'Verificar estado: pm2 status y pm2 logs nombre-app'
+    ],
+    rulesAlways: '- Siempre verificar que el build fue exitoso ANTES de conectarse al servidor\n- Siempre revisar los logs despues del deploy: pm2 logs\n- Siempre tener un respaldo del .env de produccion',
+    rulesNever: '- Nunca hacer deploy sin haber probado localmente\n- Nunca borrar node_modules manualmente en produccion\n- Nunca dejar el .env en el repositorio Git',
+    envvars: ['DATABASE_URL', 'JWT_SECRET', 'PORT', 'NODE_ENV'],
+    code: '# Conectar al servidor\nssh usuario@ip-servidor\n\n# Actualizar y reiniciar\ngit pull origin main\nnpm install --production\npm2 restart app\npm2 status'
+  },
+  crud: {
+    name: 'generar-crud',
+    purpose: 'Genera un CRUD completo (Create, Read, Update, Delete) con ruta Express, controller, queries a Neon PostgreSQL y componente React en el frontend.',
+    category: 'backend',
+    triggers: ['crud', 'crear entidad', 'agregar modulo', 'nueva tabla', 'formulario', 'listar datos', 'gestionar'],
+    description: 'Genera CRUDs completos con backend Node.js/Express y frontend React. Usar SIEMPRE que el usuario quiera: crear un nuevo modulo, agregar una entidad, hacer un formulario con su tabla, listar y editar datos, o cuando mencione "necesito gestionar X". Incluye ruta, controller, queries SQL y componente React.',
+    steps: [
+      'Identificar la entidad y sus campos (nombre, tipo, obligatorios)',
+      'Crear la tabla en Neon PostgreSQL con los campos definidos',
+      'Crear el archivo de queries: /backend/db/nombreEntidad.js',
+      'Crear el controller: /backend/controllers/nombreEntidadController.js con GET, POST, PUT, DELETE',
+      'Registrar las rutas en /backend/routes/nombreEntidad.js',
+      'Importar las rutas en server.js',
+      'Crear el componente React en /frontend/src/pages/NombreEntidad.jsx',
+      'Agregar la ruta en el router del frontend',
+      'Probar todos los endpoints con un cliente HTTP'
+    ],
+    rulesAlways: '- Siempre usar async/await para las queries\n- Siempre validar los datos antes de insertarlos\n- Siempre retornar respuestas consistentes {success, data, error}',
+    rulesNever: '- Nunca poner queries SQL directamente en las rutas\n- Nunca exponer errores de DB al cliente en produccion',
+    envvars: ['DATABASE_URL'],
+    code: '// Estructura de respuesta estandar\nres.json({ success: true, data: result })\nres.status(400).json({ success: false, error: "mensaje" })'
+  },
+  auth: {
+    name: 'auth-jwt-rafael',
+    purpose: 'Implementa autenticacion completa con JWT: registro, login, logout, middleware de proteccion de rutas y manejo de tokens en el frontend.',
+    category: 'auth',
+    triggers: ['login', 'autenticacion', 'registro', 'jwt', 'token', 'proteger rutas', 'usuarios', 'sesion'],
+    description: 'Sistema completo de autenticacion JWT para proyectos Node.js + React. Usar SIEMPRE que se mencione: login, logout, registro, autenticacion, tokens, proteger rutas, sesiones, usuarios, contrasenas, o cuando el usuario quiera que solo usuarios logueados accedan a algo.',
+    steps: [
+      'Crear tabla users en Neon: id, email, password_hash, created_at',
+      'Instalar dependencias: npm install bcryptjs jsonwebtoken',
+      'Crear /backend/middleware/auth.js para verificar tokens',
+      'Crear /backend/controllers/authController.js con register y login',
+      'En register: hashear password con bcrypt, insertar user, retornar token',
+      'En login: verificar email, comparar password con bcrypt, generar JWT',
+      'Crear rutas en /backend/routes/auth.js',
+      'En el frontend: guardar token en localStorage al login',
+      'Crear axios interceptor para enviar token en cada request',
+      'Crear componente PrivateRoute para proteger paginas'
+    ],
+    rulesAlways: '- Siempre hashear passwords con bcrypt (nunca guardar en texto plano)\n- Siempre verificar el token en rutas protegidas\n- Siempre usar HTTPS en produccion',
+    rulesNever: '- Nunca guardar el JWT_SECRET en el codigo\n- Nunca retornar el password_hash en responses',
+    envvars: ['JWT_SECRET', 'JWT_EXPIRES_IN', 'DATABASE_URL'],
+    code: '// Generar token\nconst token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "7d" })\n\n// Verificar en middleware\nconst decoded = jwt.verify(token, process.env.JWT_SECRET)'
+  },
+  stack: {
+    name: 'stack-rafael',
+    purpose: 'Convenciones globales de desarrollo de Rafael. Stack, estructura de proyectos, patrones de codigo, estilo y decisiones arquitectonicas que aplican a TODOS sus proyectos.',
+    category: 'workflow',
+    triggers: ['nuevo proyecto', 'estructura', 'convenciones', 'estilo de codigo', 'como organizar', 'stack'],
+    description: 'Convenciones y stack de Rafael para todos sus proyectos. Usar SIEMPRE al iniciar un proyecto nuevo, al generar codigo nuevo, al definir estructura de carpetas, o cuando se necesite saber como Rafael organiza su codigo. Tambien activar cuando se instalen dependencias o se defina arquitectura.',
+    steps: [
+      'Frontend: React + Vite. Componentes en /src/components, paginas en /src/pages',
+      'Backend: Node.js + Express. Rutas en /routes, logica en /controllers, DB en /db',
+      'Base de datos: Neon PostgreSQL. Conexion via DATABASE_URL en .env',
+      'Siempre usar async/await. Nunca callbacks ni .then()',
+      'Respuestas del API siempre con formato: {success: bool, data: any, error: string}',
+      'Variables de entorno en .env, nunca hardcodeadas',
+      'Hosting: Hostinger Cloud Startup. Deploy con PM2',
+      'Pagos: Flow.cl. Automatizacion: n8n Cloud'
+    ],
+    rulesAlways: '- Siempre crear .gitignore con node_modules y .env\n- Siempre crear CLAUDE.md en cada proyecto nuevo\n- Siempre documentar las variables de entorno necesarias en el README',
+    rulesNever: '- Nunca usar callbacks, siempre async/await\n- Nunca hardcodear credenciales\n- Nunca subir .env al repositorio',
+    envvars: ['DATABASE_URL', 'PORT', 'NODE_ENV'],
+    code: '// Estructura estandar de un endpoint\nrouter.get("/items", async (req, res) => {\n  try {\n    const data = await queries.getAll()\n    res.json({ success: true, data })\n  } catch (error) {\n    res.status(500).json({ success: false, error: error.message })\n  }\n})'
+  }
+};
+
+// =============================================
+// INIT — Load AI config
+// =============================================
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/config');
+    const data = await res.json();
+    const badge = document.getElementById('ai-mode-badge');
+
+    if (data.mode === 'anthropic' && data.anthropicReady) {
+      badge.textContent = 'ANTHROPIC';
+      badge.className = 'ai-mode-badge anthropic';
+    } else if (data.mode === 'n8n' && data.n8nReady) {
+      badge.textContent = 'N8N';
+      badge.className = 'ai-mode-badge n8n';
+    } else {
+      badge.textContent = 'SIN CONFIGURAR';
+      badge.className = 'ai-mode-badge none';
+    }
+  } catch (e) {
+    const badge = document.getElementById('ai-mode-badge');
+    badge.textContent = 'SIN CONFIGURAR';
+    badge.className = 'ai-mode-badge none';
+  }
+}
+
+// =============================================
+// NAVIGATION
+// =============================================
+function goToStep(n) {
+  document.querySelectorAll('.step-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('step-' + n).classList.add('active');
+  document.querySelectorAll('.step-pill').forEach(function(p, i) {
+    p.classList.remove('active', 'done');
+    if (i + 1 < n) p.classList.add('done');
+    if (i + 1 === n) p.classList.add('active');
+  });
+  currentStep = n;
+  updatePreview();
+  updateScores();
+}
+
+// =============================================
+// TAGS
+// =============================================
+function addTag(event, type) {
+  if (event.key !== 'Enter' && event.key !== ',') return;
+  event.preventDefault();
+  var inputId = type === 'triggers' ? 'trigger-input' : type === 'errors' ? 'errors-input' : 'envvars-input';
+  var input = document.getElementById(inputId);
+  var val = input.value.trim();
+  if (!val) return;
+  state[type].push(val);
+  input.value = '';
+  renderTags(type);
+  updatePreview();
+  updateScores();
+}
+
+function removeTag(type, i) {
+  state[type].splice(i, 1);
+  renderTags(type);
+  updatePreview();
+  updateScores();
+}
+
+function renderTags(type) {
+  var containerId = type === 'triggers' ? 'trigger-tags' : type === 'errors' ? 'errors-tags' : 'envvars-tags';
+  var container = document.getElementById(containerId);
+  container.innerHTML = state[type].map(function(t, i) {
+    return '<div class="tag">' + escapeHtml(t) + '<span class="tag-remove" onclick="removeTag(\'' + type + '\', ' + i + ')">&#10005;</span></div>';
+  }).join('');
+}
+
+function escapeHtml(text) {
+  var div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// =============================================
+// STEPS
+// =============================================
+function addStep(text) {
+  state.steps.push(text || '');
+  renderSteps();
+  updatePreview();
+  updateScores();
+}
+
+function renderSteps() {
+  var c = document.getElementById('steps-container');
+  c.innerHTML = state.steps.map(function(s, i) {
+    return '<div class="step-item">' +
+      '<div class="step-num-badge">' + (i + 1) + '</div>' +
+      '<div class="step-item-content">' +
+      '<input class="step-item-input" value="' + escapeHtml(s) + '" placeholder="Describe el paso ' + (i + 1) + '..." oninput="state.steps[' + i + '] = this.value; updatePreview(); updateScores()">' +
+      '</div>' +
+      '<button class="step-item-remove" onclick="removeStep(' + i + ')">&#10005;</button>' +
+      '</div>';
+  }).join('');
+}
+
+function removeStep(i) {
+  state.steps.splice(i, 1);
+  renderSteps();
+  updatePreview();
+  updateScores();
+}
+
+// =============================================
+// PREVIEW GENERATOR
+// =============================================
+function getVal(id) {
+  var el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function generateMarkdown() {
+  var name = getVal('skill-name') || 'mi-skill';
+  var purpose = getVal('skill-purpose');
+  var description = getVal('skill-description');
+  var context = getVal('skill-context');
+  var code = getVal('skill-code');
+  var rulesAlways = getVal('skill-rules-always');
+  var rulesNever = getVal('skill-rules-never');
+  var notes = getVal('skill-notes');
+
+  var md = '---\nname: ' + name + '\n';
+  if (description) {
+    md += 'description: ' + description + '\n';
+  } else if (purpose) {
+    md += 'description: ' + purpose + '\n';
+  }
+  md += '---\n\n';
+
+  if (purpose) md += '# ' + name + '\n\n' + purpose + '\n\n';
+  if (context) md += '## Contexto\n\n' + context + '\n\n';
+
+  if (state.triggers.length > 0) {
+    md += '## Cuando activar esta skill\n\nUsar cuando el usuario mencione: ' + state.triggers.join(', ') + '.\n\n';
+  }
+
+  if (state.steps.length > 0) {
+    md += '## Procedimiento\n\n';
+    state.steps.forEach(function(s, i) {
+      if (s.trim()) md += '### Paso ' + (i + 1) + '\n' + s + '\n\n';
+    });
+  }
+
+  if (code) {
+    md += '## Comandos y codigo de referencia\n\n```bash\n' + code + '\n```\n\n';
+  }
+
+  if (rulesAlways || rulesNever) {
+    md += '## Reglas\n\n';
+    if (rulesAlways) md += '### Siempre hacer\n' + rulesAlways + '\n\n';
+    if (rulesNever) md += '### Nunca hacer\n' + rulesNever + '\n\n';
+  }
+
+  if (state.errors.length > 0) {
+    md += '## Errores comunes a evitar\n\n';
+    state.errors.forEach(function(e) { md += '- ' + e + '\n'; });
+    md += '\n';
+  }
+
+  if (state.envvars.length > 0) {
+    md += '## Variables de entorno necesarias\n\n';
+    state.envvars.forEach(function(v) { md += '- `' + v + '`\n'; });
+    md += '\n';
+  }
+
+  if (notes) md += '## Notas adicionales\n\n' + notes + '\n';
+
+  return md;
+}
+
+function syntaxHighlight(md) {
+  return md
+    .replace(/^(---)/gm, '<span class="p-yaml">---</span>')
+    .replace(/^(name:|description:)/gm, '<span class="p-key">$1</span>')
+    .replace(/^(# .+)/gm, '<span class="p-h1">$1</span>')
+    .replace(/^(## .+)/gm, '<span class="p-h2">$1</span>')
+    .replace(/^(### .+)/gm, '<span class="p-h3">$1</span>')
+    .replace(/^(- .+)/gm, '<span class="p-bullet">$1</span>')
+    .replace(/(`[^`]+`)/g, '<span class="p-code">$1</span>')
+    .replace(/(```[\s\S]*?```)/g, '<span class="p-code">$1</span>')
+    .replace(/(\*\*[^*]+\*\*)/g, '<span class="p-bold">$1</span>');
+}
+
+function updatePreview() {
+  var md = generateMarkdown();
+  document.getElementById('preview-code').innerHTML = syntaxHighlight(md);
+  var name = getVal('skill-name');
+  document.getElementById('preview-filename').textContent = name ? name + '/SKILL.md' : 'SKILL.md';
+  document.getElementById('folder-name').textContent = name || 'nombre-skill';
+  document.getElementById('download-btn').disabled = !name;
+}
+
+// =============================================
+// SCORES
+// =============================================
+function updateScores() {
+  var name = getVal('skill-name');
+  var desc = getVal('skill-description');
+  var purpose = getVal('skill-purpose');
+  var rulesAlways = getVal('skill-rules-always');
+  var rulesNever = getVal('skill-rules-never');
+
+  var triggerScore = 0;
+  if (desc.length > 50) triggerScore += 30;
+  if (desc.length > 150) triggerScore += 20;
+  if (state.triggers.length >= 3) triggerScore += 25;
+  if (state.triggers.length >= 5) triggerScore += 10;
+  if (desc.toLowerCase().indexOf('siempre') !== -1 || desc.toLowerCase().indexOf('usar cuando') !== -1 || desc.toLowerCase().indexOf('activar') !== -1) triggerScore += 15;
+  triggerScore = Math.min(100, triggerScore);
+
+  var clarityScore = 0;
+  if (purpose.length > 30) clarityScore += 40;
+  if (name) clarityScore += 20;
+  if (state.steps.filter(function(s) { return s.trim(); }).length >= 2) clarityScore += 40;
+  clarityScore = Math.min(100, clarityScore);
+
+  var completeScore = 0;
+  if (name) completeScore += 15;
+  if (purpose) completeScore += 15;
+  if (desc) completeScore += 20;
+  if (state.steps.filter(function(s) { return s.trim(); }).length >= 3) completeScore += 20;
+  if (rulesAlways || rulesNever) completeScore += 15;
+  if (state.errors.length > 0) completeScore += 15;
+  completeScore = Math.min(100, completeScore);
+
+  var structureScore = 0;
+  if (state.steps.length >= 3) structureScore += 35;
+  if (rulesAlways) structureScore += 25;
+  if (rulesNever) structureScore += 20;
+  if (state.envvars.length > 0) structureScore += 10;
+  if (getVal('skill-code')) structureScore += 10;
+  structureScore = Math.min(100, structureScore);
+
+  setScore('trigger', triggerScore);
+  setScore('clarity', clarityScore);
+  setScore('complete', completeScore);
+  setScore('structure', structureScore);
+
+  var total = Math.round((triggerScore + clarityScore + completeScore + structureScore) / 4);
+  var totalEl = document.getElementById('total-score-num');
+  totalEl.textContent = total;
+  totalEl.style.color = total >= 80 ? 'var(--green)' : total >= 50 ? 'var(--yellow)' : 'var(--red)';
+
+  setCheck('chk-name', name.length > 0);
+  setCheck('chk-desc', desc.length > 80);
+  setCheck('chk-trigger', state.triggers.length >= 3);
+  setCheck('chk-steps', state.steps.filter(function(s) { return s.trim(); }).length >= 2);
+  setCheck('chk-rules', !!(rulesAlways || rulesNever));
+  setCheck('chk-pushy', desc.toLowerCase().indexOf('siempre') !== -1 || desc.toLowerCase().indexOf('activar cuando') !== -1);
+
+  var alert = document.getElementById('quality-alert');
+  if (total >= 80) {
+    alert.className = 'quality-alert visible good';
+    alert.innerHTML = 'Skill de alta calidad -- lista para usar';
+  } else if (total >= 50) {
+    alert.className = 'quality-alert visible warn';
+    alert.innerHTML = 'Skill funcional -- puede mejorarse';
+  } else if (name || purpose) {
+    alert.className = 'quality-alert visible bad';
+    alert.innerHTML = 'Skill incompleta -- necesita mas detalles';
+  } else {
+    alert.className = 'quality-alert';
+  }
+
+  var descFb = document.getElementById('desc-feedback');
+  if (desc.length > 0 && desc.length < 80) {
+    descFb.style.color = 'var(--orange)';
+    descFb.textContent = 'Muy corta (' + desc.length + ' chars). Las mejores descripciones tienen 150+ chars con palabras clave.';
+  } else if (desc.length >= 80 && desc.toLowerCase().indexOf('siempre') === -1) {
+    descFb.style.color = 'var(--yellow)';
+    descFb.textContent = 'Tip: agrega "Usar SIEMPRE que..." para hacer la descripcion mas empujona.';
+  } else if (desc.length >= 150) {
+    descFb.style.color = 'var(--green)';
+    descFb.textContent = 'Buena descripcion (' + desc.length + ' chars)';
+  } else {
+    descFb.textContent = '';
+  }
+}
+
+function setScore(name, val) {
+  document.getElementById('score-' + name).textContent = val + '%';
+  document.getElementById('bar-' + name).style.width = val + '%';
+}
+
+function setCheck(id, done) {
+  var el = document.getElementById(id);
+  if (done) {
+    el.className = 'check-item done';
+    el.querySelector('.check-icon').textContent = '\u2713';
+  } else {
+    el.className = 'check-item';
+    el.querySelector('.check-icon').textContent = '\u25CB';
+  }
+}
+
+// =============================================
+// LOAD TEMPLATE
+// =============================================
+function loadTemplate(type) {
+  var t = templates[type];
+  if (!t) return;
+
+  document.getElementById('skill-name').value = t.name;
+  document.getElementById('skill-purpose').value = t.purpose;
+  document.getElementById('skill-category').value = t.category;
+  document.getElementById('skill-description').value = t.description;
+  document.getElementById('skill-rules-always').value = t.rulesAlways;
+  document.getElementById('skill-rules-never').value = t.rulesNever;
+  document.getElementById('skill-code').value = t.code;
+
+  state.triggers = t.triggers.slice();
+  state.envvars = t.envvars.slice();
+  state.steps = t.steps.slice();
+  state.errors = [];
+
+  renderTags('triggers');
+  renderTags('envvars');
+  renderSteps();
+  updatePreview();
+  updateScores();
+  goToStep(1);
+  showToast('Template "' + t.name + '" cargado');
+}
+
+// =============================================
+// AI FUNCTIONS — calls backend /api/ai
+// =============================================
+async function callAI(prompt, action) {
+  const response = await fetch('/api/ai', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, action })
+  });
+  const data = await response.json();
+  if (!data.success) throw new Error(data.error || 'Error desconocido');
+  return data.text;
+}
+
+function setAiBtnLoading(btnId, loading) {
+  var btn = document.getElementById(btnId);
+  btn.disabled = loading;
+  btn.classList.toggle('loading', loading);
+}
+
+function showAiResponse(containerId, text) {
+  var el = document.getElementById(containerId);
+  el.className = 'ai-response visible';
+  el.innerHTML = '<div class="ai-header">&#10022; Sugerencia de IA</div>' + escapeHtml(text).replace(/\n/g, '<br>');
+}
+
+function buildPrompt(action) {
+  var name = getVal('skill-name');
+  var purpose = getVal('skill-purpose');
+  var context = getVal('skill-context');
+  var description = getVal('skill-description');
+  var triggers = state.triggers;
+  var steps = state.steps;
+
+  switch (action) {
+    case 'context':
+      return 'Eres experto en crear skills para Claude Code. El usuario esta creando una skill llamada "' + name + '" para: ' + purpose + '.\n\nSugiere 2-3 parrafos de contexto adicional que harian esta skill mas poderosa. Incluye: stack tecnologico relevante, casos edge importantes, informacion que la AI debe saber para ejecutar esta skill correctamente. Se especifico y practico. Responde en espanol, en texto plano sin markdown.';
+
+    case 'triggers':
+      return 'Eres experto en crear skills para Claude Code. La skill es "' + name + '": ' + purpose + '\n\nLista 10-15 frases cortas y palabras clave que un desarrollador diria cuando necesita esta skill. Formato: solo las frases separadas por comas, sin explicaciones. Solo responde con las frases, nada mas.';
+
+    case 'description':
+      return 'Eres experto en crear skills para Claude Code. Necesito la descripcion perfecta para el frontmatter YAML de una skill.\n\nSkill: "' + name + '"\nProposito: ' + purpose + '\nPalabras clave: ' + triggers.join(', ') + '\n\nGenera una descripcion de 2-3 oraciones que:\n1. Explique que hace la skill\n2. Sea "empujona" -- use frases como "Usar SIEMPRE que...", "Activar cuando el usuario mencione..."\n3. Liste todas las palabras clave y contextos de activacion\n4. Sea especifica y clara\n\nLa descripcion debe hacer que Claude la active automaticamente en el momento exacto correcto. Solo devuelve el texto de la descripcion, sin comillas ni explicaciones.';
+
+    case 'steps':
+      return 'Eres experto en crear skills para Claude Code. Genera los pasos del procedimiento para esta skill.\n\nSkill: "' + name + '"\nProposito: ' + purpose + '\nContexto adicional: ' + context + '\n\nGenera 6-10 pasos concretos con comandos reales cuando aplique. Un paso por linea, sin bullets ni numeros, solo el texto del paso.';
+
+    case 'rules':
+      return 'Eres experto en desarrollo web con Node.js, React, PostgreSQL y deploy en Hostinger. Para esta skill:\n\nSkill: "' + name + '"\nProposito: ' + purpose + '\nPasos: ' + steps.join(', ') + '\n\nGenera exactamente este formato:\nREGLAS:\n- regla 1\n- regla 2\n\nPROHIBICIONES:\n- prohibicion 1\n- prohibicion 2\n\nERRORES COMUNES:\n- error 1\n- error 2';
+
+    case 'review':
+      return 'Eres experto en crear skills para Claude Code. Analiza esta skill y dime que mejorar:\n\n' + generateMarkdown() + '\n\nResponde con:\nFORTALEZAS (2-3 puntos)\nMEJORAS CRITICAS (2-3 puntos concretos)\nDESCRIPCION MEJORADA (si la ves mejorable)\nPUNTAJE /100\n\nDirecto y especifico. En espanol.';
+
+    default:
+      return purpose;
+  }
+}
+
+async function aiAction(action) {
+  var name = getVal('skill-name');
+  var purpose = getVal('skill-purpose');
+
+  if (!purpose && action !== 'review') {
+    showToast('Escribe el proposito primero');
+    return;
+  }
+
+  var btnMap = {
+    context: 'btn-ai-context',
+    triggers: 'btn-ai-triggers',
+    description: 'btn-ai-desc',
+    steps: 'btn-ai-steps',
+    rules: 'btn-ai-rules',
+    review: 'btn-ai-review'
+  };
+
+  var responseMap = {
+    context: 'ai-context-response',
+    triggers: null,
+    description: 'ai-desc-response',
+    steps: 'ai-steps-response',
+    rules: 'ai-rules-response',
+    review: 'ai-review-response'
+  };
+
+  var btnId = btnMap[action];
+  setAiBtnLoading(btnId, true);
+
+  try {
+    var prompt = buildPrompt(action);
+    var res = await callAI(prompt, action);
+
+    switch (action) {
+      case 'context':
+        showAiResponse('ai-context-response', res);
+        document.getElementById('skill-context').value = res;
+        updatePreview();
+        break;
+
+      case 'triggers':
+        var tags = res.split(',').map(function(t) { return t.trim().replace(/^["'\-\s]+|["'\-\s]+$/g, ''); }).filter(function(t) { return t.length > 0 && t.length < 40; });
+        var unique = {};
+        state.triggers.forEach(function(t) { unique[t.toLowerCase()] = t; });
+        tags.forEach(function(t) { if (!unique[t.toLowerCase()]) { unique[t.toLowerCase()] = t; } });
+        state.triggers = Object.values(unique);
+        renderTags('triggers');
+        updatePreview();
+        updateScores();
+        showToast(tags.length + ' triggers sugeridos');
+        break;
+
+      case 'description':
+        document.getElementById('skill-description').value = res.trim();
+        updatePreview();
+        updateScores();
+        showAiResponse('ai-desc-response', 'Descripcion generada. Puedes editarla directamente arriba.');
+        break;
+
+      case 'steps':
+        var steps = res.split('\n').map(function(s) { return s.replace(/^\d+[\.\-\)]\s*/, '').trim(); }).filter(function(s) { return s.length > 5; });
+        state.steps = steps;
+        renderSteps();
+        updatePreview();
+        updateScores();
+        showToast(steps.length + ' pasos generados');
+        break;
+
+      case 'rules':
+        showAiResponse('ai-rules-response', res);
+        var rulesMatch = res.match(/REGLAS:\n([\s\S]*?)(?=PROHIBICIONES:|$)/);
+        var neverMatch = res.match(/PROHIBICIONES:\n([\s\S]*?)(?=ERRORES|$)/);
+        var errorsMatch = res.match(/ERRORES COMUNES:\n([\s\S]*?)$/);
+        if (rulesMatch) document.getElementById('skill-rules-always').value = rulesMatch[1].trim();
+        if (neverMatch) document.getElementById('skill-rules-never').value = neverMatch[1].trim();
+        if (errorsMatch) {
+          var errors = errorsMatch[1].trim().split('\n').map(function(e) { return e.replace(/^[-\s]+/, '').trim(); }).filter(function(e) { return e; });
+          state.errors = errors;
+          renderTags('errors');
+        }
+        updatePreview();
+        updateScores();
+        break;
+
+      case 'review':
+        showAiResponse('ai-review-response', res);
+        break;
+    }
+  } catch (e) {
+    showToast('Error: ' + e.message);
+  }
+
+  setAiBtnLoading(btnId, false);
+}
+
+// =============================================
+// MISC
+// =============================================
+function onNameInput(val) {
+  var formatted = val.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  if (formatted !== val) document.getElementById('skill-name').value = formatted;
+  updatePreview();
+  updateScores();
+}
+
+function copyPreview() {
+  var md = generateMarkdown();
+  navigator.clipboard.writeText(md).then(function() { showToast('SKILL.md copiado al portapapeles'); });
+}
+
+function downloadSkill() {
+  var name = getVal('skill-name') || 'mi-skill';
+  var md = generateMarkdown();
+  var blob = new Blob([md], { type: 'text/markdown' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'SKILL.md';
+  a.click();
+  showToast('SKILL.md descargado -- guardalo en claude_code/skills/' + name + '/');
+}
+
+function resetAll() {
+  if (!confirm('Resetear todo? Se perdera el trabajo actual.')) return;
+  document.querySelectorAll('.form-input, .form-textarea, .form-select').forEach(function(el) { el.value = ''; });
+  state.triggers = []; state.errors = []; state.envvars = []; state.steps = [];
+  renderTags('triggers'); renderTags('errors'); renderTags('envvars'); renderSteps();
+  document.querySelectorAll('.ai-response').forEach(function(el) { el.className = 'ai-response'; });
+  updatePreview(); updateScores(); goToStep(1);
+  showToast('Resetado');
+}
+
+function showToast(msg) {
+  var toast = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 3000);
+}
+
+// Init
+addStep('');
+updatePreview();
+updateScores();
+loadConfig();
+</script>
+</body>
+</html>
