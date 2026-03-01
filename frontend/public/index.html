@@ -1146,15 +1146,15 @@ function loadTemplate(type) {
 // =============================================
 // AI FUNCTIONS — calls backend /api/ai
 // =============================================
-async function callAI(prompt, action) {
-  const response = await fetch('/api/ai', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, action })
+async function callClaude(prompt) {
+  const response = await fetch("https://paleturquoise-dugong-351531.hostingersite.com/api/ai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
   });
   const data = await response.json();
-  if (!data.success) throw new Error(data.error || 'Error desconocido');
-  return data.text;
+  if (!data.success) throw new Error(data.error || "Error del servidor");
+  return data.text || "Sin respuesta.";
 }
 
 function setAiBtnLoading(btnId, loading) {
@@ -1233,7 +1233,7 @@ async function aiAction(action) {
 
   try {
     var prompt = buildPrompt(action);
-    var res = await callAI(prompt, action);
+    var res = await callClaude(prompt);
 
     switch (action) {
       case 'context':

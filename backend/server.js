@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const path = require('path');
 
 // Load .env
@@ -8,6 +9,9 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
+app.use(cors({
+  origin: ['https://sienna-walrus-325774.hostingersite.com', 'http://localhost:3001']
+}));
 app.use(express.json());
 
 // Static files
