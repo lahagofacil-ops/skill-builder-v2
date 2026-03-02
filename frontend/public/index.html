@@ -817,7 +817,7 @@ const templates = {
 // =============================================
 async function loadConfig() {
   try {
-    const res = await fetch('/api/config');
+    const res = await fetch('https://paleturquoise-dugong-351531.hostingersite.com/api/config');
     const data = await res.json();
     const badge = document.getElementById('ai-mode-badge');
 
